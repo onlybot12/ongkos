@@ -28,7 +28,7 @@ app.post("/api/ongkir", async (req, res) => {
             !destination ||
             !Number.isInteger(Number(weight)) ||
             Number(weight) < 1 ||
-            !["jne", "pos", "tiki"].includes(courier) ||
+            !["jne", "shopee", "pos", "tiki"].includes(courier) ||
             !["lowest", "highest"].includes(price)
         ) {
             return res.status(400).json({
