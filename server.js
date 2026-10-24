@@ -7,7 +7,7 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.RAJAONGKIR_API_KEY;
+const API_KEY = "vcg21OUA72e88ffa28428be1FffXgtzl";
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: false }));
