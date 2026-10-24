@@ -1,0 +1,382 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0878f9">
+    <title>Cek Ongkir RajaOngkir</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            width: calc(100% - 32px);
+            margin: 40px auto;
+            background: #f4f7fb;
+            color: #202938;
+        }
+
+        .container {
+            background: #fff;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, .07);
+        }
+
+        h2 {
+            text-align: center;
+            margin: 0 0 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        input, select, button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #d7dce5;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid #b8d8ff;
+            border-color: #0878f9;
+        }
+
+        button {
+            background: #0878f9;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background .2s;
+        }
+
+        button:hover {
+            background: #075fc5;
+        }
+
+        button:disabled {
+            opacity: .65;
+            cursor: wait;
+        }
+
+        .result-heading {
+            margin-top: 25px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e1e7ef;
+            border-left: 5px solid #0878f9;
+            padding: 16px;
+            margin-top: 12px;
+            border-radius: 9px;
+            overflow-wrap: anywhere;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+
+        .cost {
+            color: #0878f9;
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .message {
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 18px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .success {
+            background: #e3f8e8;
+            color: #176b35;
+        }
+
+        .error {
+            background: #ffe8e8;
+            color: #a61b1b;
+        }
+
+        .loading {
+            background: #e7f1ff;
+            color: #075fc5;
+        }
+
+        .footer {
+            margin-top: 24px;
+            color: #87909e;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                margin: 20px auto;
+            }
+
+            .container {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h2>Cek Ongkir</h2>
+    <p class="subtitle">
+        RajaOngkir Komerce API<br>
+        Periksa estimasi biaya pengiriman paketmu.
+    </p>
+
+    <form id="ongkirForm">
+        <label for="origin">Kota Asal</label>
+        <select id="origin" required>
+            <option value="501">Semarang</option>
+            <option value="114">Jakarta Barat</option>
+            <option value="39">Bandung</option>
+        </select>
+
+        <label for="destination">Kota Tujuan</label>
+        <select id="destination" required>
+            <option value="114">Jakarta Barat</option>
+            <option value="501">Semarang</option>
+            <option value="78">Surabaya</option>
+        </select>
+
+        <label for="weight">Berat Paket (gram)</label>
+        <input
+            type="number"
+            id="weight"
+            min="1"
+            step="1"
+            placeholder="Contoh: 1000"
+            required
+        >
+
+        <label for="courier">Kurir</label>
+        <select id="courier" required>
+            <option value="jne">JNE</option>
+            <option value="pos">POS Indonesia</option>
+            <option value="tiki">TIKI</option>
+        </select>
+
+        <label for="price">Pilihan Harga</label>
+        <select id="price" required>
+            <option value="lowest">Harga termurah</option>
+            <option value="highest">Harga tertinggi</option>
+        </select>
+
+        <button type="submit" id="submitButton">
+            Cek Ongkir
+        </button>
+    </form>
+
+    <div id="result" aria-live="polite"></div>
+
+    <div class="footer">
+        Ongkir dan estimasi mengikuti respons layanan API.
+    </div>
+
+</div>
+
+<script>
+    const form = document.getElementById("ongkirForm");
+    const result = document.getElementById("result");
+    const submitButton = document.getElementById("submitButton");
+
+    function showMessage(message, type = "error") {
+        result.replaceChildren();
+
+        const box = document.createElement("div");
+        box.className = `message ${type}`;
+        box.textContent = message;
+
+        result.appendChild(box);
+    }
+
+    function formatRupiah(value) {
+        const amount = Number(value);
+
+        if (!Number.isFinite(amount)) {
+            return "-";
+        }
+
+        return amount.toLocaleString("id-ID", {
+            style: "currency",
+            currency: "IDR",
+            maximumFractionDigits: 0
+        });
+    }
+
+    function addField(card, label, value, isCost = false) {
+        const paragraph = document.createElement("p");
+        const strong = document.createElement("strong");
+
+        strong.textContent = label + ": ";
+
+        if (isCost) {
+            paragraph.className = "cost";
+            paragraph.textContent = formatRupiah(value);
+        } else {
+            paragraph.appendChild(strong);
+            paragraph.appendChild(
+                document.createTextNode(
+                    value == null || value === "" ? "-" : String(value)
+                )
+            );
+        }
+
+        card.appendChild(paragraph);
+    }
+
+    function renderResults(data) {
+        result.replaceChildren();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            showMessage("Data ongkir tidak ditemukan.");
+            return;
+        }
+
+        const heading = document.createElement("h3");
+        heading.className = "result-heading";
+        heading.textContent = `Hasil Ongkir (${data.length} layanan)`;
+
+        result.appendChild(heading);
+
+        data.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const title = document.createElement("h3");
+            title.textContent = item.service || "Layanan pengiriman";
+            card.appendChild(title);
+
+            addField(card, "Kurir", item.name);
+            addField(card, "Deskripsi", item.description);
+            addField(card, "Biaya", item.cost, true);
+            addField(card, "Estimasi", item.etd);
+
+            result.appendChild(card);
+        });
+    }
+
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const origin = document.getElementById("origin").value;
+        const destination =
+            document.getElementById("destination").value;
+        const weight =
+            Number(document.getElementById("weight").value);
+        const courier = document.getElementById("courier").value;
+        const price = document.getElementById("price").value;
+
+        if (!Number.isInteger(weight) || weight < 1) {
+            showMessage("Berat paket harus minimal 1 gram.");
+            return;
+        }
+
+        if (origin === destination) {
+            showMessage("Kota asal dan tujuan tidak boleh sama.");
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Memproses...";
+
+        showMessage("Sedang mengambil data ongkir...", "loading");
+
+        try {
+            const response = await fetch("/api/ongkir", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    origin,
+                    destination,
+                    weight,
+                    courier,
+                    price
+                })
+            });
+
+            const responseText = await response.text();
+            let responseData;
+
+            try {
+                responseData = JSON.parse(responseText);
+            } catch {
+                throw new Error(
+                    "Respons server tidak valid (HTTP " +
+                    response.status + ")."
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    responseData.message ||
+                    "Permintaan gagal (HTTP " + response.status + ")."
+                );
+            }
+
+            if (
+                responseData &&
+                Array.isArray(responseData.data)
+            ) {
+                renderResults(responseData.data);
+            } else {
+                showMessage(
+                    responseData.message ||
+                    "Format respons ongkir tidak sesuai."
+                );
+            }
+
+        } catch (error) {
+            showMessage(
+                "Gagal mengambil ongkir: " + error.message +
+                " Pastikan server Node.js berjalan dan API key valid."
+            );
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "Cek Ongkir";
+        }
+    });
+</script>
+</body>
+</html>
